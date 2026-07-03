@@ -76,4 +76,25 @@ const loginUser = async (req, res) => {
   }
 };
 
-export { registerUser, loginUser };
+const getProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const userProfile = await pool.query(
+      "SELECT id,name,email,phone_number FROM users WHERE id=$1",
+      [userId],
+    );
+    if (userProfile.rows.length === 0) {
+      return res.status(404).json({
+        message: "User not found.",
+      });
+    }
+    return res.status(200).json(userProfile.rows[0]);
+  } catch (error) {
+    console.error("Get Profile Error:", error);
+    return res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
+export { registerUser, loginUser, getProfile };

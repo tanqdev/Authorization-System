@@ -35,9 +35,45 @@ const registerUser = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Register Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: "All Fields Are Required" });
+    }
+    const user = await pool.query(
+      "SELECT id,password FROM users WHERE email=$1",
+      [email],
+    );
+    if (user.rows.length === 0) {
+      return res.status(401).json({ message: "Invalid Email or Password" });
+    }
+    const isMatch = await bcrypt.compare(password, user.rows[0].password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid Email or Password" });
+    }
+    const userId = user.rows[0].id;
+    const token = jwt.sign(
+      {
+        userId,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1h",
+      },
+    );
+    return res.status(200).json({
+      message: "User Logged In successfully.",
+      token,
+    });
+  } catch (error) {
+    console.error("Login Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-export { registerUser };
+export { registerUser, loginUser };
